@@ -1,0 +1,3 @@
+CyberShield test file.
+Edit this file while CyberShield is running to demonstrate SHA-256 file-integrity detection.
+hacked

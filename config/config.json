@@ -1,0 +1,24 @@
+{
+  "process": {
+    "cpu_alert_threshold": 80.0,
+    "memory_alert_threshold": 80.0
+  },
+  "resource": {
+    "cpu_alert_threshold": 85.0,
+    "memory_alert_threshold": 85.0,
+    "disk_alert_threshold": 90.0
+  },
+  "file_integrity": {
+    "monitor_path": "test_files",
+    "scan_interval_seconds": 5
+  },
+  "login": {
+    "failed_attempt_threshold": 5,
+    "window_seconds": 300,
+    "poll_interval_seconds": 5
+  },
+  "dashboard": {
+    "host": "127.0.0.1",
+    "port": 5000
+  }
+}
