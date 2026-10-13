@@ -1,5 +1,4 @@
 import threading
-import time
 import psutil
 
 
@@ -9,9 +8,14 @@ class ProcessMonitor(threading.Thread):
         self.threshold = config["process"]["cpu_alert_threshold"]
         self.alerts = alerts
         self.stop_event = stop_event
+        self.flagged_pids = set()      # processes already reported as high-CPU
+        self.lock = threading.Lock()
+        self.latest = []
 
     def snapshot(self):
         processes = []
+        over_threshold = set()
+
         for proc in psutil.process_iter(
             ["pid", "name", "username", "status", "cpu_percent", "memory_percent"]
         ):
@@ -30,16 +34,28 @@ class ProcessMonitor(threading.Thread):
                 })
 
                 if cpu >= self.threshold:
-                    self.alerts.raise_alert(
-                        "PROCESS_RESOURCE",
-                        "LOW",
-                        f"Process {info['pid']} ({info.get('name')}) is using {cpu:.1f}% CPU",
-                        {"pid": info["pid"], "cpu": cpu}
-                    )
+                    over_threshold.add(info["pid"])
+                    # Alert only when the process first crosses the threshold.
+                    if info["pid"] not in self.flagged_pids:
+                        self.alerts.raise_alert(
+                            "PROCESS_RESOURCE",
+                            "LOW",
+                            f"Process {info['pid']} ({info.get('name')}) is using {cpu:.1f}% CPU",
+                            {"pid": info["pid"], "cpu": cpu}
+                        )
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
 
-        return sorted(processes, key=lambda x: x["cpu"], reverse=True)
+        self.flagged_pids = over_threshold
+        processes.sort(key=lambda x: x["cpu"], reverse=True)
+
+        with self.lock:
+            self.latest = processes
+        return processes
+
+    def latest_snapshot(self):
+        with self.lock:
+            return list(self.latest)
 
     def run(self):
         while not self.stop_event.is_set():

@@ -1,5 +1,3 @@
-import os
-import psutil
 from flask import Flask, jsonify, render_template_string
 
 
@@ -72,51 +70,25 @@ th,td { padding:10px; border-bottom:1px solid #303945; text-align:left; }
 """
 
 
-def create_app(logger, alerts, base_dir):
+def create_app(logger, alerts, process_monitor, resource_monitor):
     app = Flask(__name__)
 
     @app.route("/")
     def index():
-        resource = {
-            "cpu": round(psutil.cpu_percent(interval=0.1), 1),
-            "memory": round(psutil.virtual_memory().percent, 1),
-            "disk": round(psutil.disk_usage("/").percent, 1),
-            "processes": len(psutil.pids())
-        }
-
-        processes = []
-        for proc in psutil.process_iter(
-            ["pid", "name", "username", "status", "cpu_percent", "memory_percent"]
-        ):
-            try:
-                info = proc.info
-                processes.append({
-                    "pid": info["pid"],
-                    "name": info.get("name") or "unknown",
-                    "owner": info.get("username") or "unknown",
-                    "status": info.get("status") or "unknown",
-                    "cpu": round(float(info.get("cpu_percent") or 0), 1),
-                    "memory": round(float(info.get("memory_percent") or 0), 1)
-                })
-            except Exception:
-                continue
-
-        events = logger.recent_events(50)
         return render_template_string(
             HTML,
-            resource=resource,
-            processes=sorted(processes, key=lambda x: x["cpu"], reverse=True),
-            alerts=events
+            resource=resource_monitor.latest_snapshot(),
+            processes=process_monitor.latest_snapshot(),
+            alerts=logger.recent_events(50)
         )
 
     @app.route("/api/resources")
     def resources():
-        return jsonify({
-            "cpu": psutil.cpu_percent(interval=0.1),
-            "memory": psutil.virtual_memory().percent,
-            "disk": psutil.disk_usage("/").percent,
-            "processes": len(psutil.pids())
-        })
+        return jsonify(resource_monitor.latest_snapshot())
+
+    @app.route("/api/processes")
+    def processes():
+        return jsonify(process_monitor.latest_snapshot())
 
     @app.route("/api/events")
     def events():

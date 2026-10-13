@@ -3,11 +3,16 @@ import psutil
 
 
 class ResourceMonitor(threading.Thread):
+    LABELS = {"cpu": "CPU", "memory": "Memory", "disk": "Disk"}
+
     def __init__(self, config, alerts, stop_event):
         super().__init__(daemon=True, name="ResourceMonitor")
         self.config = config["resource"]
         self.alerts = alerts
         self.stop_event = stop_event
+        self.active = set()            # metrics currently above threshold
+        self.lock = threading.Lock()
+        self.latest = {"cpu": 0, "memory": 0, "disk": 0, "processes": 0}
 
     def snapshot(self):
         cpu = psutil.cpu_percent(interval=0.2)
@@ -22,28 +27,26 @@ class ResourceMonitor(threading.Thread):
             "processes": processes
         }
 
-        if cpu >= self.config["cpu_alert_threshold"]:
-            self.alerts.raise_alert(
-                "RESOURCE_USAGE", "LOW",
-                f"CPU utilization is {cpu:.1f}%",
-                result
-            )
+        for metric, value in (("cpu", cpu), ("memory", memory), ("disk", disk)):
+            if value >= self.config[f"{metric}_alert_threshold"]:
+                # Alert only when the metric first crosses the threshold.
+                if metric not in self.active:
+                    self.active.add(metric)
+                    self.alerts.raise_alert(
+                        "RESOURCE_USAGE", "LOW",
+                        f"{self.LABELS[metric]} utilization is {value:.1f}%",
+                        result
+                    )
+            else:
+                self.active.discard(metric)
 
-        if memory >= self.config["memory_alert_threshold"]:
-            self.alerts.raise_alert(
-                "RESOURCE_USAGE", "LOW",
-                f"Memory utilization is {memory:.1f}%",
-                result
-            )
-
-        if disk >= self.config["disk_alert_threshold"]:
-            self.alerts.raise_alert(
-                "RESOURCE_USAGE", "LOW",
-                f"Disk utilization is {disk:.1f}%",
-                result
-            )
-
+        with self.lock:
+            self.latest = result
         return result
+
+    def latest_snapshot(self):
+        with self.lock:
+            return dict(self.latest)
 
     def run(self):
         while not self.stop_event.is_set():

@@ -142,7 +142,15 @@ Stop it with `Ctrl+C`.
 
 ## Login-monitor demonstration
 
-The login monitor is designed to read Linux authentication information. On systems with `/var/log/auth.log`, it watches that file. If the file is unavailable, it attempts to read recent authentication messages through `journalctl`.
+The login monitor is designed to read Linux authentication information. On systems with `/var/log/auth.log`, it watches that file. If the file is unavailable, it reads new authentication messages through `journalctl`. Only events that happen after CyberShield starts are analysed.
+
+`/var/log/auth.log` is readable only by root and the `adm` group. If CyberShield cannot read it, the dashboard shows a `LOGIN_MONITOR` alert. Either run CyberShield with `sudo`, or add your user to the `adm` group once and log in again:
+
+```bash
+sudo usermod -aG adm $USER
+```
+
+On WSL, run `wsl --shutdown` from PowerShell and reopen Ubuntu for the group change to apply.
 
 You can inspect your own authentication records with:
 

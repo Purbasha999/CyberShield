@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 import threading
-import time
 
 
 class FileIntegrityMonitor(threading.Thread):
@@ -61,10 +60,12 @@ class FileIntegrityMonitor(threading.Thread):
             except OSError:
                 pass
 
+        self._save_baseline(baseline)
+        return baseline
+
+    def _save_baseline(self, baseline):
         with open(self.baseline_path, "w", encoding="utf-8") as file:
             json.dump(baseline, file, indent=2)
-
-        return baseline
 
     def scan_once(self):
         current = {}
@@ -95,6 +96,11 @@ class FileIntegrityMonitor(threading.Thread):
                     f"New file detected: {path}",
                     {"path": path, "event": "created"}
                 )
+
+        # Accept the new state so each change is reported once, not every scan.
+        if current != self.baseline:
+            self.baseline = current
+            self._save_baseline(current)
 
         return current
 

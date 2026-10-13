@@ -2,7 +2,6 @@ import json
 import os
 import signal
 import threading
-import time
 
 from modules.process_monitor import ProcessMonitor
 from modules.resource_monitor import ResourceMonitor
@@ -39,16 +38,21 @@ def main():
     for monitor in monitors:
         monitor.start()
 
-    app = create_app(logger, alerts, BASE_DIR)
+    process_monitor, resource_monitor = monitors[0], monitors[1]
+    app = create_app(logger, alerts, process_monitor, resource_monitor)
 
-    def shutdown(*_):
+    def shutdown():
+        print("\nStopping CyberShield...")
         stop_event.set()
         for monitor in monitors:
-            monitor.join(timeout=2)
+            monitor.join(timeout=5)
         logger.close()
 
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
+    def handle_sigterm(*_):
+        # Stop Flask the same way Ctrl+C does.
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
 
     print("=" * 55)
     print("CYBERSHIELD OS")
@@ -65,6 +69,8 @@ def main():
             debug=False,
             use_reloader=False
         )
+    except KeyboardInterrupt:
+        pass
     finally:
         shutdown()
 

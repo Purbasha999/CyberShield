@@ -48,6 +48,8 @@ class EventLogger:
         details_text = json.dumps(details or {})
 
         with self.lock:
+            if self.connection is None:
+                return
             self.file_logger.info(
                 "%s | %s | %s | %s",
                 source, severity, message, details_text
@@ -60,6 +62,8 @@ class EventLogger:
 
     def recent_events(self, limit=100):
         with self.lock:
+            if self.connection is None:
+                return []
             cursor = self.connection.execute(
                 "SELECT id, timestamp, source, severity, message, details "
                 "FROM events ORDER BY id DESC LIMIT ?",
@@ -81,4 +85,6 @@ class EventLogger:
 
     def close(self):
         with self.lock:
-            self.connection.close()
+            if self.connection is not None:
+                self.connection.close()
+                self.connection = None
