@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# CyberShield runtime data (auth.log lines contain usernames and hostnames)
+*.db
+*.log
+logs/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

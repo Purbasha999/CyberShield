@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CyberShield OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%233b82f6' d='M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z" />
+        <path class="tick" d="m8.5 12 2.5 2.5 4.5-5" />
+      </svg>
+      <div>
+        <h1>CyberShield OS</h1>
+        <p id="host" class="muted">Security monitoring system</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="notify" class="button hidden" title="Show a desktop notification when a change needs confirmation">Enable desktop alerts</button>
+      <span id="protection" class="pill" title="Asks before risky changes are kept">PROTECTION</span>
+      <div class="meta">
+        <span id="uptime" class="muted"></span>
+        <span id="updated" class="muted">Connecting…</span>
+      </div>
+      <div id="overall" class="overall" data-level="STARTING">
+        <span class="dot"></span><span id="overall-text">STARTING</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid cols-4">
+      <article class="card gauge-card">
+        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="track" cx="50" cy="50" r="42" />
+          <circle id="ring-cpu" class="value" cx="50" cy="50" r="42" />
+          <text id="ring-cpu-text" x="50" y="55">–</text>
+        </svg>
+        <div class="gauge-info">
+          <h3>CPU</h3>
+          <p id="cpu-sub" class="muted"></p>
+          <div id="cores" class="cores"></div>
+        </div>
+      </article>
+      <article class="card gauge-card">
+        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="track" cx="50" cy="50" r="42" />
+          <circle id="ring-mem" class="value" cx="50" cy="50" r="42" />
+          <text id="ring-mem-text" x="50" y="55">–</text>
+        </svg>
+        <div class="gauge-info">
+          <h3>Memory</h3>
+          <p id="mem-sub" class="muted"></p>
+          <p id="swap-sub" class="muted small"></p>
+        </div>
+      </article>
+      <article class="card gauge-card">
+        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="track" cx="50" cy="50" r="42" />
+          <circle id="ring-disk" class="value" cx="50" cy="50" r="42" />
+          <text id="ring-disk-text" x="50" y="55">–</text>
+        </svg>
+        <div class="gauge-info">
+          <h3>Disk</h3>
+          <p id="disk-sub" class="muted"></p>
+          <p id="net-sub" class="muted small"></p>
+        </div>
+      </article>
+      <article class="card stat-card">
+        <h3>Processes</h3>
+        <p id="proc-count" class="big">–</p>
+        <div id="proc-states" class="stack-bar"></div>
+        <p id="proc-legend" class="muted small"></p>
+      </article>
+    </section>
+
+    <section class="grid cols-3">
+      <article class="card span-2">
+        <header class="card-head">
+          <h2>Resource history</h2>
+          <div class="legend">
+            <span><i class="sw sw-cpu"></i>CPU <b id="lg-cpu"></b></span>
+            <span><i class="sw sw-mem"></i>Memory <b id="lg-memory"></b></span>
+            <span><i class="sw sw-disk"></i>Disk <b id="lg-disk"></b></span>
+          </div>
+        </header>
+        <div class="chart-wrap"><canvas id="history-chart"></canvas></div>
+      </article>
+      <article class="card">
+        <header class="card-head"><h2>Security modules</h2></header>
+        <ul id="modules" class="module-list"></ul>
+      </article>
+    </section>
+
+    <section class="grid cols-3">
+      <article class="card span-2">
+        <header class="card-head">
+          <h2>Recent alerts</h2>
+          <div id="alert-filter" class="chips" role="group" aria-label="Filter alerts by severity">
+            <button class="chip active" data-sev="ALL">All</button>
+            <button class="chip" data-sev="HIGH">High</button>
+            <button class="chip" data-sev="MEDIUM">Medium</button>
+            <button class="chip" data-sev="LOW">Low</button>
+          </div>
+        </header>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Time</th><th>Severity</th><th>Module</th><th>Alert</th><th>Details</th></tr></thead>
+            <tbody id="alerts"></tbody>
+          </table>
+        </div>
+      </article>
+      <article class="card">
+        <header class="card-head"><h2>Alerts · last 24 h</h2></header>
+        <div class="tiles">
+          <div class="tile sev-HIGH"><span id="count-HIGH">0</span><label>High</label></div>
+          <div class="tile sev-MEDIUM"><span id="count-MEDIUM">0</span><label>Medium</label></div>
+          <div class="tile sev-LOW"><span id="count-LOW">0</span><label>Low</label></div>
+        </div>
+        <div class="chart-wrap short"><canvas id="timeline-chart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="grid cols-3">
+      <article class="card span-2">
+        <header class="card-head">
+          <h2>Top processes</h2>
+          <span id="proc-thresholds" class="muted small"></span>
+        </header>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>PID</th><th>Name</th><th>User</th><th class="w-cpu">CPU</th><th>Memory</th><th>State</th></tr></thead>
+            <tbody id="processes"></tbody>
+          </table>
+        </div>
+      </article>
+      <article class="card">
+        <header class="card-head"><h2>Authentication</h2></header>
+        <p id="auth-message" class="notice hidden"></p>
+        <div class="meter-block">
+          <div class="meter-label"><span>Failed attempts in window</span><strong id="auth-window">0 / 0</strong></div>
+          <div class="meter"><div id="auth-meter" class="meter-fill"></div></div>
+        </div>
+        <div class="mini-stats">
+          <div><span id="auth-failed">0</span><label>Failed</label></div>
+          <div><span id="auth-success">0</span><label>Successful</label></div>
+          <div><span id="auth-sudo">0</span><label>Sudo cmds</label></div>
+        </div>
+        <h4>Top failure sources</h4>
+        <ul id="auth-sources" class="plain-list"></ul>
+        <h4>Recent authentication events</h4>
+        <ul id="auth-recent" class="feed"></ul>
+      </article>
+    </section>
+
+    <section class="grid cols-3">
+      <article class="card span-2">
+        <header class="card-head">
+          <h2>File integrity</h2>
+          <button id="rebaseline" class="button">Accept current state</button>
+        </header>
+        <div class="mini-stats">
+          <div><span id="fim-files">0</span><label>Files watched</label></div>
+          <div><span id="fim-scan">–</span><label>Scan time</label></div>
+          <div><span id="fim-last">–</span><label>Last scan</label></div>
+        </div>
+        <h4>Watched paths</h4>
+        <ul id="fim-roots" class="plain-list"></ul>
+        <h4>Recent changes</h4>
+        <ul id="fim-changes" class="feed"></ul>
+        <p id="fim-errors" class="muted small"></p>
+      </article>
+      <article class="card">
+        <header class="card-head"><h2>Security event log</h2></header>
+        <ul id="events" class="feed tall"></ul>
+      </article>
+    </section>
+  </main>
+
+  <footer class="muted small">CyberShield OS · Monitor. Detect. Alert. Protect.</footer>
+  <div id="approval" class="modal-backdrop hidden" role="alertdialog" aria-modal="true" aria-labelledby="approval-title">
+    <div class="modal">
+      <div class="modal-head">
+        <svg class="modal-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path class="mark" d="M12 10v5M12 18h.01"/></svg>
+        <div>
+          <p class="muted small" id="approval-module"></p>
+          <h2 id="approval-title"></h2>
+        </div>
+      </div>
+      <p id="approval-summary" class="approval-summary"></p>
+      <dl id="approval-details" class="kv"></dl>
+      <p class="question">Do you want to continue?</p>
+      <div class="countdown"><div id="approval-bar"></div></div>
+      <p id="approval-timeout" class="muted small"></p>
+      <div class="modal-actions">
+        <button id="approval-deny" class="button danger">Block &amp; rewind</button>
+        <button id="approval-allow" class="button">Allow</button>
+      </div>
+      <p id="approval-more" class="muted small"></p>
+    </div>
+  </div>
+
+  <div id="blocked" class="modal-backdrop hidden" role="alertdialog" aria-modal="true" aria-labelledby="blocked-title">
+    <div class="modal">
+      <div class="modal-head">
+        <svg class="modal-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path class="mark" d="M5.6 5.6l12.8 12.8"/></svg>
+        <div>
+          <p class="muted small">Process monitor · blocked automatically</p>
+          <h2 id="blocked-title">Potentially harmful process blocked</h2>
+        </div>
+      </div>
+      <ul id="blocked-list" class="blocked-list"></ul>
+      <p class="muted small">These processes used too much CPU or memory and might be harmful, so CyberShield stopped them.
+        If one was expected, add its name to <code>process_monitor.block_exempt_names</code> in <code>config/config.json</code>.</p>
+      <div class="modal-actions">
+        <button id="blocked-ok" class="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

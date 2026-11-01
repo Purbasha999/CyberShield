@@ -1,0 +1,68 @@
+{
+  "data_dir": "~/.cybershield",
+
+  "dashboard": {
+    "host": "127.0.0.1",
+    "port": 8080,
+    "refresh_seconds": 2
+  },
+
+  "alerts": {
+    "cooldown_seconds": 60,
+    "status_window_seconds": 300
+  },
+
+  "approvals": {
+    "enabled": true,
+    "file_changes": true,
+    "suspicious_processes": true,
+    "timeout_seconds": 120,
+    "on_timeout": "rewind",
+    "popup": "auto"
+  },
+
+  "process_monitor": {
+    "enabled": true,
+    "interval_seconds": 3,
+    "cpu_threshold": 80,
+    "memory_threshold": 25,
+    "sustain_polls": 2,
+    "top_n": 15,
+    "suspicious_names": ["nc", "ncat", "netcat", "socat", "xmrig", "minerd", "cpuminer", "hydra", "john", "hashcat", "mimikatz", "kworkerds"],
+    "suspicious_paths": ["/tmp/", "/dev/shm/", "/var/tmp/"],
+    "block_heavy_processes": true,
+    "block_exempt_names": ["systemd", "init", "sshd", "bash", "zsh", "sh", "fish", "tmux", "screen", "node", "code", "code-server", "wslhost", "Xwayland", "apt", "apt-get", "dpkg"]
+  },
+
+  "file_monitor": {
+    "enabled": true,
+    "interval_seconds": 10,
+    "watch_paths": ["/etc/passwd", "/etc/group", "/etc/hosts", "~/cybershield_watch"],
+    "exclude": [".git", "__pycache__", "node_modules", ".venv", "*.tmp", "*.swp", "*.swx", "*~", "*:Zone.Identifier", "desktop.ini", "Thumbs.db", "~$*"],
+    "recursive": true,
+    "fast_mode": false,
+    "max_file_size_mb": 50,
+    "vault_max_mb": 20,
+    "realtime": true
+  },
+
+  "login_monitor": {
+    "enabled": true,
+    "interval_seconds": 2,
+    "log_path": "/var/log/auth.log",
+    "max_failed_attempts": 3,
+    "window_seconds": 300,
+    "read_history_on_start": true
+  },
+
+  "resource_monitor": {
+    "enabled": true,
+    "interval_seconds": 2,
+    "cpu_threshold": 90,
+    "memory_threshold": 90,
+    "disk_threshold": 90,
+    "sustain_polls": 3,
+    "disk_paths": ["/"],
+    "history_size": 150
+  }
+}
